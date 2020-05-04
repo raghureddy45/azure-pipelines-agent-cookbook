@@ -21,6 +21,7 @@ property :env, Hash, default: {}, desired_state: false
 
 # VSTS Access
 property :vsts_url, String, regex: %r{^https?://.*$}
+property :proxy_url, String, desired_state: false
 property :vsts_pool, String
 property :vsts_auth, String, default: 'PAT', desired_state: false
 property :vsts_username, String, desired_state: false
@@ -45,6 +46,7 @@ load_current_value do
   user state['user']
   group state['group']
   vsts_url state['vsts_url']
+  proxy_url state['proxy_url']
   vsts_pool state['vsts_pool']
   work_folder state['work_folder']
   deploymentGroup state['deploymentGroup']
@@ -109,6 +111,7 @@ action :install do
       unattended: nil,
       replace: nil,
       url: new_resource.vsts_url,
+      proxy_url: new_resource.proxy_url,
       agent: new_resource.agent_name,
       work: new_resource.work_folder,
     }
@@ -171,6 +174,7 @@ action :install do
                                             user: new_resource.user,
                                             group: new_resource.group,
                                             vsts_url: new_resource.vsts_url,
+                                            proxy_url: new_resource.proxy_url,
                                             vsts_pool: new_resource.vsts_pool,
                                             work_folder: new_resource.work_folder,
                                             deploymentGroup: new_resource.deploymentGroup,
@@ -254,14 +258,14 @@ action_class do
           end
           action :run
       end
-  
+
       args = {
           remove: nil,
           unattended: nil
       }
-  
+
       set_auth(args, resource)
-  
+
       execute "Unconfiguring agent '#{resource.agent_name}'" do
           cwd "#{resource.install_dir}/bin"
           command vsagentexec(args)
@@ -269,7 +273,7 @@ action_class do
           action :run
           only_if { agent_exists?(resource.install_dir) }
       end
-  
+
       directory resource.install_dir do
           recursive true
           action :delete
